@@ -1,1 +1,4 @@
-PyQt6 == 6.7.1
+PyQt6==6.7.1
+intelhex==2.3.0
+pyserial==3.5
+opencv-python==4.10.0.84
