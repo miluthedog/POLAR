@@ -103,11 +103,17 @@ class BackEnd:
 
     def firmware(self):
         firmware = GRBL(self.frontend.combo1.currentText(), self.frontend.combo2.currentText())
-        alreadyGrbl = firmware.checkFirmware()
-        if not alreadyGrbl:
-            response = "Uploading firmware..."
-            firmware.uploadHex()
+        
+        if not firmware.checkFirmware():
+            response = "Firmware not found. Uploading ..."
             self.responses.append(response)
+            self.frontend.leftArea.setText("<br>".join(self.responses))
+            uploaded, response = firmware.uploadHex()
+            if not uploaded:
+                self.responses.append(response)
+                self.frontend.leftArea.setText("<br>".join(self.responses))
+                return
+
         self.frontend.button1.setText("Firmware: ON")
         response = "Firmware: ready"
         self.responses.append(response)
@@ -118,6 +124,7 @@ class BackEnd:
 
     def connect(self):
         connector = Arduino(self.frontend.combo1.currentText(), self.frontend.combo2.currentText())
+
         if self.frontend.button3.text() == "OFF":
             self.connection, response = connector.connect(self.connection)
             if self.connection:
@@ -182,6 +189,7 @@ class RightTopBackEnd(QWidget):
     def wheelEvent(self, event: QWheelEvent):
         zoom = 1.2 if event.angleDelta().y() > 0 else 1 / 1.2
         newgridSize = self.gridSize * zoom
+
         if 10 < newgridSize < 100:
             mousePos = event.position()
             mouseOffsetX = mousePos.x() - self.width() / 2

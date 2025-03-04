@@ -16,17 +16,16 @@ class GRBL:
             time.sleep(2)
             self.connection.flushInput()
 
-            self.connection.write(b"\r\n")  # Request GRBL
+            self.connection.write(b"\r\n")
             time.sleep(0.1)
             response = self.connection.read_until(b"\n").decode().strip()
-
             if "ok" in response:
                 return True
             else:
                 print("No firmware detected")
                 return False
-        except serial.SerialException as e:
-            print(f"Serial error: {e}")
+        except serial.SerialException as error:
+            print(f"Error: {error}")
             return False
         finally:
             if self.connection and self.connection.is_open:
@@ -38,8 +37,8 @@ class GRBL:
             time.sleep(0.1)
             self.connection.close()
             time.sleep(2)
-        except serial.SerialException as e:
-            print(f"Reset error: {e}")
+        except serial.SerialException as error:
+            print(f"Error: {error}")
 
     def syncBootloader(self):
         if not self.connection or not self.connection.is_open:
@@ -66,13 +65,12 @@ class GRBL:
             self.reset()
             try:
                 self.connection = serial.Serial(self.PORT, self.BAUD, timeout=1)
-            except serial.SerialException as e:
-                print(f"Serial connection error: {e}")
-                return
+            except serial.SerialException as error:
+                return False, (f"Error: {error}")
 
             if not self.syncBootloader():
                 self.connection.close()
-                return
+                return False, (f"Error: Bootloader not synced")
 
             STK_LOAD_ADDRESS = b'\x55' 
             STK_PROG_PAGE = b'\x64'
@@ -85,7 +83,6 @@ class GRBL:
                 chunk_len = len(chunk)
                 if chunk_len == 0:
                     break
-
                 if chunk_len < self.PAGE_SIZE:
                     chunk += b'\xFF' * (self.PAGE_SIZE - chunk_len)
 
@@ -93,8 +90,7 @@ class GRBL:
                 addr_bytes = bytes([addr_words & 0xFF, (addr_words >> 8) & 0xFF])
                 self.connection.write(STK_LOAD_ADDRESS + addr_bytes + CRC_EOP)
                 if self.connection.read(2) != STK_INSYNC + STK_OK:
-                    print(f"Address {addr} failed")
-                    break
+                    return False, (f"Error: upload failed at {addr}")
 
                 size_bytes = bytes([0x00, self.PAGE_SIZE & 0xFF]) 
                 self.connection.write(STK_PROG_PAGE + size_bytes + b'\x46' + chunk + CRC_EOP)
@@ -102,11 +98,10 @@ class GRBL:
                 if resp == STK_INSYNC + STK_OK:
                     print(f"Uploaded page at address {addr}")
                 else:
-                    print(f"Error: failed at {addr}: {resp.hex()}")
-                    break
+                    return False, (f"Error: upload failed at {addr}: {resp.hex()}")
 
-            print("Upload complete!")
             self.connection.close()
+            return True, ("Upload complete!")
 
         except Exception as e:
-            print(f"Error: {e}")
+            return False, (f"Error: {e}")
