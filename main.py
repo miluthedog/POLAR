@@ -1,19 +1,20 @@
-from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QGridLayout, QComboBox, QPushButton, QLabel, QSizePolicy, QTextEdit
+from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QGridLayout, QComboBox, QPushButton, QLabel, QSizePolicy, QTextEdit, QDialog, QFileDialog, QSlider
 from PyQt6.QtCore import Qt, QPointF
-from PyQt6.QtGui import QIcon, QPainter, QPen, QWheelEvent, QMouseEvent, QColor
+from PyQt6.QtGui import QIcon, QPainter, QPen, QWheelEvent, QMouseEvent, QColor, QPixmap
+import os
 from modules.camera import camera
 from modules.connect import Arduino
 from modules.firmware import GRBL
 from modules.imageConvert import png2gcode
 
-class FrontEnd(QWidget):
+class MainFrontEnd(QWidget):
     def __init__(self):
         super().__init__()
         self.resize(1270, 720)
         self.setWindowTitle("POLAR")
         self.setWindowIcon(QIcon("polar.ico"))
 
-        self.backend = BackEnd(self)
+        self.backend = MainBackEnd(self)
         self.addLeftWidget()
         self.addRightWidget()
 
@@ -86,7 +87,7 @@ class FrontEnd(QWidget):
         rightdownWidget.setFixedHeight(100)
         rightdownWidget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
 
-        righttopWidget = RightTopBackEnd(self)
+        righttopWidget = RightTopFullStack(self)
         righttopWidget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
         right = QVBoxLayout()
@@ -95,11 +96,12 @@ class FrontEnd(QWidget):
         self.rightWidget = QWidget()
         self.rightWidget.setLayout(right)
 
-class BackEnd:
+class MainBackEnd:
     def __init__(self, frontend):
         self.frontend = frontend
         self.connection = None
         self.responses = []
+        self.popup = None
 
     def firmware(self):
         firmware = GRBL(self.frontend.combo1.currentText(), self.frontend.combo2.currentText())
@@ -141,10 +143,12 @@ class BackEnd:
         print("Controller functionality upcoming")
 
     def imageConvert(self):
-        print("Image conversion functionality upcoming")
+        if self.popup is None or not self.popup.isVisible():
+            self.popup = PopupFrontEnd(self.frontend)
+            self.popup.exec()
 
-class RightTopBackEnd(QWidget):
-    def __init__(self, parent=None):
+class RightTopFullStack(QWidget):
+    def __init__(self, parent):
         super().__init__(parent)
         self.gridSize = 50
         self.offset = QPointF(0, 0)
@@ -205,19 +209,122 @@ class RightTopBackEnd(QWidget):
         if event.button() == Qt.MouseButton.LeftButton:
             self.lastMouse = event.position()
 
-    def mouseMoveEvent(self, ev: QMouseEvent):
+    def mouseMoveEvent(self, event: QMouseEvent):
         if self.lastMouse is not None:
-            delta = ev.position() - self.lastMouse
+            delta = event.position() - self.lastMouse
             self.offset += delta
-            self.lastMouse = ev.position()
+            self.lastMouse = event.position()
             self.update()
 
     def mouseReleaseEvent(self, event: QMouseEvent):
         if event.button() == Qt.MouseButton.LeftButton:
             self.lastMouse = None
 
+
+class PopupFrontEnd(QDialog):
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.setFixedSize(800, 500)
+        self.setWindowTitle("Image Converter")
+        self.setWindowIcon(QIcon("polar.ico"))
+
+        self.feedrateValue = 1000
+        self.scaleValue = 1.0
+        self.spacingValue = 5
+        
+        self.backend = PopupBackEnd(self)
+        self.addLeftWidget()
+        self.addRightWidget()
+
+        popup = QHBoxLayout()
+        popup.addWidget(self.leftWidget)
+        popup.addWidget(self.rightWidget)
+        self.setLayout(popup)
+
+    def addLeftWidget(self):
+        self.leftWidget = QLabel(self)
+        self.leftWidget.setStyleSheet("border: 1px solid #00aaaa; background: #333333;")
+        self.leftWidget.setScaledContents(True)
+        self.leftWidget.setFixedSize(600, 450)
+
+    def addRightWidget(self):
+        buttonLayout = QHBoxLayout()
+        self.bigButton1 = QPushButton("Load Image", self)
+        self.bigButton2 = QPushButton("Done", self)
+        for bigButton in (self.bigButton1, self.bigButton2):
+            bigButton.setFixedSize(80, 30)
+            buttonLayout.addWidget(bigButton, alignment=Qt.AlignmentFlag.AlignHCenter)
+        self.bigButton1.clicked.connect(self.backend.loadImage)
+        self.bigButton2.clicked.connect(self.backend.doneImage)
+
+        sliderLayout = QHBoxLayout()
+        self.slider1 = QSlider(Qt.Orientation.Vertical)
+        self.slider2 = QSlider(Qt.Orientation.Vertical)
+        self.slider3 = QSlider(Qt.Orientation.Vertical)
+        for slider in (self.slider1, self.slider2, self.slider3):
+            slider.setFixedHeight(250)
+            slider.setMinimum(1)
+            slider.setMaximum(20)
+            sliderLayout.addWidget(slider)
+        self.slider1.setValue(20)
+        self.slider2.setValue(10)
+        self.slider3.setValue(5)
+        self.slider1.valueChanged.connect(self.getFeedrate)
+        self.slider2.valueChanged.connect(self.getScale)
+        self.slider3.valueChanged.connect(self.getSpacing)
+
+        rowLayout = QVBoxLayout()
+        self.label1 = QLabel(f"Feedrate: {self.feedrateValue}", self)
+        self.label2 = QLabel(f"Size: {self.scaleValue}", self)
+        self.label3 = QLabel(f"Line Spacing: {self.spacingValue}", self)
+        self.button1 = QPushButton("?")
+        self.button2 = QPushButton("?")
+        self.button3 = QPushButton("?")
+        row1 = QHBoxLayout()
+        row2 = QHBoxLayout()
+        row3 = QHBoxLayout()
+        for label, button, row in zip([self.label1, self.label2, self.label3], [self.button1, self.button2, self.button3], [row1, row2, row3]):
+            button.setFixedSize(20, 20)
+            row.addWidget(label)
+            row.addWidget(button)
+            rowLayout.addLayout(row)
+
+        right = QVBoxLayout()
+        right.addLayout(buttonLayout)
+        right.addLayout(sliderLayout)
+        right.addLayout(rowLayout)
+        self.rightWidget = QWidget()
+        self.rightWidget.setLayout(right)
+
+    def getFeedrate(self, value):
+        self.feedrateValue = value * 50
+        self.label1.setText(f"Feedrate: {self.feedrateValue}")
+
+    def getScale(self, value):
+        self.scaleValue = value / 10
+        self.label2.setText(f"Size: {self.scaleValue:.1f}")
+
+    def getSpacing(self, value):
+        self.spacingValue = value
+        self.label3.setText(f"Line Spacing: {self.spacingValue}")
+
+class PopupBackEnd:
+    def __init__(self, frontend):
+        self.frontend = frontend
+
+    def loadImage(self):
+        initial_dir = os.path.dirname(os.path.abspath(__file__))
+        pathFilter = "Image Files (*.png *.jpg);;Vector Files (*.svg *.pdf);;All Files (*)"
+        file_path, _ = QFileDialog.getOpenFileName(self.frontend, "Select Image", initial_dir, pathFilter)
+        if file_path:
+            pixmap = QPixmap(file_path)
+            self.frontend.leftWidget.setPixmap(pixmap)
+    
+    def doneImage(self):
+        self.frontend.accept()
+
 if __name__ == "__main__":
     app = QApplication([])
-    window = FrontEnd()
+    window = MainFrontEnd()
     window.show()
     app.exec()
