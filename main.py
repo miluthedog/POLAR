@@ -11,7 +11,7 @@ class MainFrontEnd(QWidget):
         super().__init__()
         self.resize(1270, 720)
         self.setWindowTitle("POLAR")
-        self.setWindowIcon(QIcon("polar.ico"))
+        self.setWindowIcon(QIcon("Assests/polar.ico"))
 
         self.backend = MainBackEnd(self)
         self.addLeftWidget()

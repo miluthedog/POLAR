@@ -9,7 +9,7 @@ class PopupFrontEnd(QDialog):
         super().__init__(parent)
         self.setFixedSize(800, 500)
         self.setWindowTitle("Image Converter")
-        self.setWindowIcon(QIcon("polar.ico"))
+        self.setWindowIcon(QIcon("Assests/polar.ico"))
         self.feedrateValue, self.scaleValue, self.spacingValue = 1000, 1.0, 5
         
         self.backend = PopupBackEnd(self)
