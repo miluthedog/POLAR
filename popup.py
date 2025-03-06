@@ -1,11 +1,11 @@
-from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QDialog, QFileDialog, QSlider
-from PyQt6.QtCore import Qt
+from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QDialog, QFileDialog, QSlider, QApplication
+from PyQt6.QtCore import Qt, QEvent, QPoint
 from PyQt6.QtGui import QIcon, QPixmap, QImage
 import os
 from modules.imageConvert import converter
 
 class PopupFrontEnd(QDialog):
-    def __init__(self, parent):
+    def __init__(self, parent=None):
         super().__init__(parent)
         self.setFixedSize(800, 500)
         self.setWindowTitle("Image Converter")
@@ -54,16 +54,15 @@ class PopupFrontEnd(QDialog):
         self.labelFeedrate = QLabel(f"Feedrate: {self.feedrateValue}", self)
         self.labelScale = QLabel(f"Size: {self.scaleValue}", self)
         self.labelSpacing = QLabel(f"Line Spacing: {self.spacingValue}", self)
-        buttonFeedrate, buttonScale, buttonSpacing = QPushButton("?"), QPushButton("?"), QPushButton("?")
+        buttonFeedrate = HintButton("?", "Laser speed, based on materials:\n- Wood: 1000\n- Cardboard: 800", self)
+        buttonScale = HintButton("?", "Rescales the image", self)
+        buttonSpacing = HintButton("?", "Spacing between lines", self)
         rowFeedrate, rowScale, rowSpacing = QHBoxLayout(), QHBoxLayout(), QHBoxLayout()
         for label, button, row in zip([self.labelFeedrate, self.labelScale, self.labelSpacing], [buttonFeedrate, buttonScale, buttonSpacing], [rowFeedrate, rowScale, rowSpacing]):
             button.setFixedSize(20, 20)
             row.addWidget(label)
             row.addWidget(button)
             rowLayout.addLayout(row)
-        buttonFeedrate.clicked.connect(self.backend.hintFeedrate)
-        buttonScale.clicked.connect(self.backend.hintScale)
-        buttonSpacing.clicked.connect(self.backend.hintSpacing)
 
         right = QVBoxLayout()
         for layout in (buttonLayout, sliderLayout, rowLayout):
@@ -100,11 +99,33 @@ class PopupBackEnd:
     def doneImage(self):
         self.frontend.accept()
     
-    def hintFeedrate(self):
-        pass
-    
-    def hintScale(self):
-        pass
-    
-    def hintSpacing(self):
-        pass
+class HintButton(QPushButton):
+    def __init__(self, text, hint, parent=None):
+        super().__init__(text, parent)
+        self.hint = hint
+
+        self.tooltip = QLabel(self.hint, parent)
+        self.tooltip.setStyleSheet("background: gray; border: 1px solid #00aaaa; padding: 5px;")
+        self.tooltip.setWindowFlags(Qt.WindowType.ToolTip | Qt.WindowType.FramelessWindowHint)
+        self.tooltip.hide()
+
+        self.installEventFilter(self)
+
+    def eventFilter(self, obj, event):
+        if obj == self:
+            if event.type() == QEvent.Type.Enter:
+                self.showTooltip()
+            elif event.type() == QEvent.Type.Leave:
+                self.tooltip.hide()
+        return super().eventFilter(obj, event)
+
+    def showTooltip(self):
+        pos = self.mapToGlobal(QPoint(self.width() + 5, 0))
+        self.tooltip.move(pos)
+        self.tooltip.show()
+
+if __name__ == "__main__":
+    app = QApplication([])
+    window = PopupFrontEnd()
+    window.show()
+    app.exec()

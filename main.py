@@ -141,7 +141,7 @@ class MainBackEnd:
             self.popup.exec()
 
 class RightTopFullStack(QWidget):
-    def __init__(self, parent):
+    def __init__(self, parent=None):
         super().__init__(parent)
         self.gridSize = 50
         self.offset = QPointF(0, 0)
