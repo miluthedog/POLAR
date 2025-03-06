@@ -2,7 +2,7 @@ from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLab
 from PyQt6.QtCore import Qt, QEvent, QPoint
 from PyQt6.QtGui import QIcon, QPixmap, QImage
 import os
-from modules.imageConvert import converter
+from modules.imageConvert import Converter
 
 class PopupFrontEnd(QDialog):
     def __init__(self, parent=None):
@@ -73,31 +73,42 @@ class PopupFrontEnd(QDialog):
     def getFeedrate(self, value):
         self.feedrateValue = value * 50
         self.labelFeedrate.setText(f"Feedrate: {self.feedrateValue}")
+        self.backend.updateImage()
 
     def getScale(self, value):
         self.scaleValue = value / 10
         self.labelScale.setText(f"Size: {self.scaleValue:.1f}")
+        self.backend.updateImage()
 
     def getSpacing(self, value):
         self.spacingValue = value
         self.labelSpacing.setText(f"Line Spacing: {self.spacingValue}")
+        self.backend.updateImage()
 
 class PopupBackEnd:
     def __init__(self, frontend):
         self.frontend = frontend
+        self.offsetX, self.offsetY = 0, 0
+        self.croprgba = None
 
     def loadImage(self):
         initialDir = os.path.dirname(os.path.abspath(__file__))
         pathFilter = "Image Files (*.png *.jpg);;Vector Files (*.svg *.pdf);;All Files (*)"
         filePath, _ = QFileDialog.getOpenFileName(self.frontend, "Select Image", initialDir, pathFilter)
         if filePath:
-            image, height, width, bytesLine = converter(filePath).img2croprgba()
-            qImage = QImage(image.data, width, height, bytesLine, QImage.Format.Format_RGBA8888)
+            self.croprgba = Converter().img2croprgba(filePath)
+    
+    def updateImage(self):
+        if self.croprgba:
+            self.lines, width, height, bytesLine = Converter().croprgba2lines(self.croprgba, self.frontend.scaleValue, self.frontend.spacingValue)
+            qImage = QImage(self.lines.data, width, height, bytesLine, QImage.Format.Format_RGBA8888)
             qPixmap = QPixmap.fromImage(qImage)
             self.frontend.leftWidget.setPixmap(qPixmap)
-    
+            # alway available draging -> update offset
+
     def doneImage(self):
-        self.frontend.accept()
+        if self.frontend.accept():
+            self.gcode = Converter().lines2gcode(self.lines, self.frontend.feedrateValue, self.offsetX, self.offsetY)
     
 class HintButton(QPushButton):
     def __init__(self, text, hint, parent=None):
