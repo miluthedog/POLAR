@@ -69,7 +69,7 @@ class MainFrontEnd(QWidget):
         self.leftWidget.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Expanding)
 
     def addRightWidget(self):
-        buttonPopup = QPushButton("Bottom Button")
+        buttonPopup = QPushButton("Image Processor")
         buttonPopup.setFixedSize(150, 40)
         buttonPopup.clicked.connect(self.backend.imageConvert)
 

@@ -94,12 +94,12 @@ class PopupBackEnd:
     def loadImage(self):
         initialDir = os.path.dirname(os.path.abspath(__file__))
         pathFilter = "Image Files (*.png *.jpg);;Vector Files (*.svg *.pdf);;All Files (*)"
-        filePath, _ = QFileDialog.getOpenFileName(self.frontend, "Select Image", initialDir, pathFilter)
-        if filePath:
-            self.croprgba = Converter().img2croprgba(filePath)
+        self.filePath, _ = QFileDialog.getOpenFileName(self.frontend, "Select Image", initialDir, pathFilter)
+        if self.filePath:
+            self.croprgba = Converter().img2croprgba(self.filePath)
     
     def updateImage(self):
-        if self.croprgba:
+        if self.filePath:
             self.lines, width, height, bytesLine = Converter().croprgba2lines(self.croprgba, self.frontend.scaleValue, self.frontend.spacingValue)
             qImage = QImage(self.lines.data, width, height, bytesLine, QImage.Format.Format_RGBA8888)
             qPixmap = QPixmap.fromImage(qImage)

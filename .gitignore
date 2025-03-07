@@ -1,5 +1,4 @@
-*\.pyc
+*\__pycache__
 
 idea.txt
-temp.py 
-test2.png
+temp.py
