@@ -20,17 +20,20 @@ class Converter():
         return outputImage
 
     def croprgba2vector(self, inputImage, scale, spacing): 
-        rgbImage = inputImage[:, :, 0]
+        rgbImage = inputImage[:, :, 0] / 255.0
         aImage = inputImage[:, :, 3] / 255.0
         height, width = rgbImage.shape
         dwg = svgwrite.Drawing(size=(width, height))
 
         for y in range(0, height, spacing):
             x_start = 0
-            prev_opacity = aImage[y, 0]
+            prev_opacity = rgbImage[y, 0]
 
             for x in range(1, width):
-                stroke_opacity = aImage[y, x]
+                if (aImage[y, x] == 0):
+                    stroke_opacity = 0
+                else:
+                    stroke_opacity = 1 - rgbImage[y, x]
 
                 if stroke_opacity != prev_opacity:
                     dwg.add(dwg.line((x_start, y), (x - 1, y), stroke="black", stroke_width=scale, stroke_opacity=prev_opacity))
@@ -41,7 +44,7 @@ class Converter():
 
         outputImage = io.StringIO()
         dwg.write(outputImage)
-        return outputImage.getvalue()
+        return outputImage.getvalue(), width, height
 
     def vector2gcode(self, inputImage, feedrate, offsetX, offsetY):
         maxLaser = 255
@@ -79,10 +82,10 @@ class Converter():
     
 if __name__ == "__main__":
     processor = Converter()
-    rgbaImage = processor.img2croprgba("test2.png")
+    rgbaImage = processor.img2croprgba("modules/asd.png")
     cv.imwrite("output.png", rgbaImage)
 
-    svg_data = processor.croprgba2vector(rgbaImage, 1, 5)
+    svg_data = processor.croprgba2vector(rgbaImage, 1, 3)
     with open("output.svg", "w", encoding="utf-8") as f:
         f.write(svg_data)
     

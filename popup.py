@@ -1,6 +1,7 @@
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QDialog, QFileDialog, QSlider, QApplication
-from PyQt6.QtCore import Qt, QEvent, QPoint
-from PyQt6.QtGui import QIcon, QPixmap, QImage
+from PyQt6.QtCore import Qt, QEvent, QPoint, QByteArray, QSize
+from PyQt6.QtGui import QIcon, QPixmap, QImage, QPainter
+from PyQt6.QtSvg import QSvgRenderer
 import os
 from modules.imageConvert import Converter
 
@@ -100,9 +101,16 @@ class PopupBackEnd:
     
     def updateImage(self):
         if self.filePath:
-            self.lines, width, height, bytesLine = Converter().croprgba2lines(self.croprgba, self.frontend.scaleValue, self.frontend.spacingValue)
-            qImage = QImage(self.lines.data, width, height, bytesLine, QImage.Format.Format_RGBA8888)
-            qPixmap = QPixmap.fromImage(qImage)
+            self.svgString, width, height = Converter().croprgba2vector(self.croprgba, self.frontend.scaleValue, self.frontend.spacingValue)
+            svgBytes = QByteArray(self.svgString.encode('utf-8'))                   # decode svg string
+            renderer = QSvgRenderer(svgBytes)                                       # set up svg "renderer"
+            svgQimage = QImage(QSize(width, height), QImage.Format.Format_ARGB32)   # set up qImage
+            svgQimage.fill(0)
+            painter = QPainter(svgQimage)                                           # set up qPainter
+            renderer.render(painter)                                                
+            painter.end()            
+
+            qPixmap = QPixmap.fromImage(svgQimage)                                  # convert to qPixmap (require 3 set up)
             self.frontend.leftWidget.setPixmap(qPixmap)
             # alway available draging -> update offset
 
