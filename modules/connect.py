@@ -1,7 +1,7 @@
 import serial
 import time
 
-class Arduino:
+class Connection:
     def __init__(self, port, baud):
         self.PORT = port
         self.BAUD = baud
@@ -21,15 +21,14 @@ class Arduino:
             connection.close()
             return None, "Disconnected"
         return connection, "Error: no connection"
-        
-    def send(self, connection, data):
-        if not connection:
-            return "Error: no connection"
-        try:
-            connection.write(f"{data}\n".encode('utf-8'))
-            time.sleep(0.1)
-            while connection.in_waiting > 0:
-                sentData = connection.readline().decode('utf-8').strip()
-                return (sentData)
-        except serial.SerialException as error:
-            return (f"Failed to connect: {error}")
+
+class Communication:
+    def __init__(self, connection):
+        self.connection = connection
+
+    def send(self, data):
+        self.connection.write(f"{data}\n".encode('utf-8'))
+        time.sleep(0.1)
+        while self.connection.in_waiting > 0:
+            sentData = self.connection.readline().decode('utf-8').strip()
+            return sentData

@@ -90,7 +90,9 @@ class PopupBackEnd:
     def __init__(self, frontend):
         self.frontend = frontend
         self.offsetX, self.offsetY = 0, 0
+        self.filePath = None
         self.croprgba = None
+        self.gcode = None
 
     def loadImage(self):
         initialDir = os.path.dirname(os.path.abspath(__file__))
@@ -98,7 +100,7 @@ class PopupBackEnd:
         self.filePath, _ = QFileDialog.getOpenFileName(self.frontend, "Select Image", initialDir, pathFilter)
         if self.filePath:
             self.croprgba = Converter().img2croprgba(self.filePath)
-    
+
     def updateImage(self):
         if self.filePath:
             self.svgString, width, height = Converter().croprgba2vector(self.croprgba, self.frontend.scaleValue, self.frontend.spacingValue)

@@ -1,9 +1,9 @@
 from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QGridLayout, QComboBox, QPushButton, QSizePolicy, QTextEdit
 from PyQt6.QtCore import Qt, QPointF
 from PyQt6.QtGui import QIcon, QPainter, QPen, QWheelEvent, QMouseEvent, QColor
-from popup import PopupFrontEnd
+from popup import PopupFrontEnd, PopupBackEnd
 from modules.camera import camera
-from modules.connect import Arduino
+from modules.connect import Connection, Communication
 from modules.firmware import GRBL
 
 class MainFrontEnd(QWidget):
@@ -69,11 +69,15 @@ class MainFrontEnd(QWidget):
         self.leftWidget.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Expanding)
 
     def addRightWidget(self):
+        buttonRun = QPushButton("Run")
         buttonPopup = QPushButton("Image Processor")
+        buttonRun.setFixedSize(150, 40)
         buttonPopup.setFixedSize(150, 40)
+        buttonRun.clicked.connect(self.backend.gcodeSender)
         buttonPopup.clicked.connect(self.backend.imageConvert)
 
         rightdown = QVBoxLayout()
+        rightdown.addWidget(buttonRun, alignment=Qt.AlignmentFlag.AlignCenter)
         rightdown.addWidget(buttonPopup, alignment=Qt.AlignmentFlag.AlignCenter)
         rightdownWidget = QWidget()
         rightdownWidget.setLayout(rightdown)
@@ -92,13 +96,14 @@ class MainFrontEnd(QWidget):
 class MainBackEnd:
     def __init__(self, frontend):
         self.frontend = frontend
-        self.connection = None
         self.responses = []
+        self.connection = None
         self.popup = None
-
+        self.gcode = None
+        
     def firmware(self):
         firmware = GRBL(self.frontend.comboCom.currentText(), self.frontend.comboBaud.currentText())
-        
+
         if not firmware.checkFirmware():
             response = "Firmware not found. Uploading ..."
             self.responses.append(response)
@@ -118,7 +123,7 @@ class MainBackEnd:
         print("Camera functionality upcoming")
 
     def connect(self):
-        connector = Arduino(self.frontend.comboCom.currentText(), self.frontend.comboBaud.currentText())
+        connector = Connection(self.frontend.comboCom.currentText(), self.frontend.comboBaud.currentText())
 
         if self.frontend.buttonConnect.text() == "OFF":
             self.connection, response = connector.connect(self.connection)
@@ -135,6 +140,15 @@ class MainBackEnd:
     def controller(self):
         print("Controller functionality upcoming")
 
+    def gcodeSender(self):                                                                  #adsdsdsdad
+        self.gcode = PopupBackEnd.gcode                                                  #sdsadsadsa
+        if self.gcode and self.connection:                                                  #dsadsad
+            sender = Communication(self.connection)                                                 #sadsadsadsadadw
+            for line in self.gcode.split("\n"):
+                response = sender.send(line)
+                self.responses.append(response)
+                self.frontend.leftArea.setText("<br>".join(self.responses))
+
     def imageConvert(self):
         if self.popup is None or not self.popup.isVisible():
             self.popup = PopupFrontEnd(self.frontend)
@@ -146,7 +160,7 @@ class RightTopFullStack(QWidget):
         self.gridSize = 50
         self.offset = QPointF(0, 0)
         self.lastMouse = None
-    
+
     def paintEvent(self, event):
         render = QPainter(self)
         render.setRenderHint(QPainter.RenderHint.Antialiasing)
@@ -177,7 +191,7 @@ class RightTopFullStack(QWidget):
 
         render.setPen(bigRed)
         render.drawRect(centerX, centerY, 5, 5)
-    
+
     def wheelEvent(self, event: QWheelEvent):
         zoom = 1.2 if event.angleDelta().y() > 0 else 1 / 1.2
         newgridSize = self.gridSize * zoom
@@ -190,7 +204,7 @@ class RightTopFullStack(QWidget):
             self.offset.setY(self.offset.y() * scale + mouseOffsetY * (1 - scale))
             self.gridSize = newgridSize
             self.update()
-    
+
     def mousePressEvent(self, event: QMouseEvent):
         if event.button() == Qt.MouseButton.LeftButton:
             self.lastMouse = event.position()
