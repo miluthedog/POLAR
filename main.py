@@ -6,6 +6,7 @@ from modules.camera import camera
 from modules.connect import Connection, Communication
 from modules.firmware import GRBL
 
+
 class MainFrontEnd(QWidget):
     def __init__(self):
         super().__init__()
@@ -140,10 +141,10 @@ class MainBackEnd:
     def controller(self):
         print("Controller functionality upcoming")
 
-    def gcodeSender(self):                                                                  #adsdsdsdad
-        self.gcode = PopupBackEnd.gcode                                                  #sdsadsadsa
-        if self.gcode and self.connection:                                                  #dsadsad
-            sender = Communication(self.connection)                                                 #sadsadsadsadadw
+    def gcodeSender(self):
+        self.gcode = PopupBackEnd.takegcode()
+        if self.gcode and self.connection:
+            sender = Communication(self.connection)
             for line in self.gcode.split("\n"):
                 response = sender.send(line)
                 self.responses.append(response)
@@ -153,6 +154,7 @@ class MainBackEnd:
         if self.popup is None or not self.popup.isVisible():
             self.popup = PopupFrontEnd(self.frontend)
             self.popup.exec()
+
 
 class RightTopFullStack(QWidget):
     def __init__(self, parent=None):
@@ -218,6 +220,7 @@ class RightTopFullStack(QWidget):
     def mouseReleaseEvent(self, event: QMouseEvent):
         if event.button() == Qt.MouseButton.LeftButton:
             self.lastMouse = None
+
 
 if __name__ == "__main__":
     app = QApplication([])

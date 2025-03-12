@@ -5,6 +5,7 @@ from PyQt6.QtSvg import QSvgRenderer
 import os
 from modules.imageConvert import Converter
 
+
 class PopupFrontEnd(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -86,6 +87,7 @@ class PopupFrontEnd(QDialog):
         self.labelSpacing.setText(f"Line Spacing: {self.spacingValue}")
         self.backend.updateImage()
 
+
 class PopupBackEnd:
     def __init__(self, frontend):
         self.frontend = frontend
@@ -120,6 +122,10 @@ class PopupBackEnd:
         if self.frontend.accept():
             self.gcode = Converter().lines2gcode(self.lines, self.frontend.feedrateValue, self.offsetX, self.offsetY)
     
+    def takegcode(self):
+        return self.gcode
+
+
 class HintButton(QPushButton):
     def __init__(self, text, hint, parent=None):
         super().__init__(text, parent)
@@ -144,6 +150,7 @@ class HintButton(QPushButton):
         pos = self.mapToGlobal(QPoint(self.width() + 5, 0))
         self.tooltip.move(pos)
         self.tooltip.show()
+
 
 if __name__ == "__main__":
     app = QApplication([])
