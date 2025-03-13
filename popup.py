@@ -121,7 +121,7 @@ class PopupBackEnd:
     def doneImage(self):
         if self.frontend.accept():
             self.gcode = Converter().lines2gcode(self.lines, self.frontend.feedrateValue, self.offsetX, self.offsetY)
-    
+
     def takegcode(self):
         return self.gcode
 
