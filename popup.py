@@ -11,7 +11,7 @@ class PopupFrontEnd(QDialog):
         super().__init__(parent)
         self.setFixedSize(800, 500)
         self.setWindowTitle("Image Converter")
-        self.setWindowIcon(QIcon("Assests/polar.ico"))
+        self.setWindowIcon(QIcon("Assets/polar.ico"))
         self.feedrateValue, self.scaleValue, self.spacingValue = 1000, 1.0, 5
         
         self.backend = PopupBackEnd(self)
@@ -56,7 +56,7 @@ class PopupFrontEnd(QDialog):
         self.labelFeedrate = QLabel(f"Feedrate: {self.feedrateValue}", self)
         self.labelScale = QLabel(f"Size: {self.scaleValue}", self)
         self.labelSpacing = QLabel(f"Line Spacing: {self.spacingValue}", self)
-        buttonFeedrate = HintButton("?", "Laser speed, based on materials:\n- Wood: 1000\n- Cardboard: 800", self)
+        buttonFeedrate = HintButton("?", "Laser movement speed, based on materials:\n- Wood: 1000\n- Cardboard: 800", self)
         buttonScale = HintButton("?", "Rescales the image", self)
         buttonSpacing = HintButton("?", "Spacing between lines", self)
         rowFeedrate, rowScale, rowSpacing = QHBoxLayout(), QHBoxLayout(), QHBoxLayout()
@@ -122,7 +122,7 @@ class PopupBackEnd:
         if self.frontend.accept():
             self.gcode = Converter().lines2gcode(self.lines, self.frontend.feedrateValue, self.offsetX, self.offsetY)
 
-    def takegcode(self):
+    def getGcode(self):
         return self.gcode
 
 

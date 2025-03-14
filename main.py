@@ -12,7 +12,7 @@ class MainFrontEnd(QWidget):
         super().__init__()
         self.resize(1270, 720)
         self.setWindowTitle("POLAR")
-        self.setWindowIcon(QIcon("Assests/polar.ico"))
+        self.setWindowIcon(QIcon("Assets/polar.ico"))
 
         self.backend = MainBackEnd(self)
         self.addLeftWidget()
@@ -25,10 +25,10 @@ class MainFrontEnd(QWidget):
 
     def addLeftWidget(self):
         leftCombos = QHBoxLayout()
-        self.comboCom, self.comboBaud = QComboBox(), QComboBox()
-        self.comboCom.addItems(["COM5", "COM4", "COM3", "COM2", "COM1"])
-        self.comboBaud.addItem("115200")
-        for combo in (self.comboCom, self.comboBaud):
+        self.comboPort, self.comboBaudRate = QComboBox(), QComboBox()
+        self.comboPort.addItems(["COM5", "COM4", "COM3", "COM2", "COM1"])
+        self.comboBaudRate.addItem("115200")
+        for combo in (self.comboPort, self.comboBaudRate):
             leftCombos.addWidget(combo)
 
         leftButtons = QHBoxLayout()
@@ -103,7 +103,7 @@ class MainBackEnd:
         self.gcode = None
         
     def firmware(self):
-        firmware = GRBL(self.frontend.comboCom.currentText(), self.frontend.comboBaud.currentText())
+        firmware = GRBL(self.frontend.comboPort.currentText(), self.frontend.comboBaudRate.currentText())
 
         if not firmware.checkFirmware():
             response = "Firmware not found. Uploading ..."
@@ -124,7 +124,7 @@ class MainBackEnd:
         print("Camera functionality upcoming")
 
     def connect(self):
-        connector = Connection(self.frontend.comboCom.currentText(), self.frontend.comboBaud.currentText())
+        connector = Connection(self.frontend.comboPort.currentText(), self.frontend.comboBaudRate.currentText())
 
         if self.frontend.buttonConnect.text() == "OFF":
             self.connection, response = connector.connect(self.connection)
@@ -142,7 +142,7 @@ class MainBackEnd:
         print("Controller functionality upcoming")
 
     def gcodeSender(self):
-        self.gcode = PopupBackEnd.takegcode()
+        self.gcode = PopupBackEnd.getGcode()
         if self.gcode and self.connection:
             sender = Communication(self.connection)
             for line in self.gcode.split("\n"):
