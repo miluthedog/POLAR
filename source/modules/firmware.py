@@ -6,7 +6,7 @@ class GRBL:
     def __init__(self, port, baud):
         self.PORT = port                                    # Left USB = COM 5
         self.BAUD = baud                                    # 115200
-        self.HEX_FILE = "modules/firmwareConvert/grbl.hex"  # .hex
+        self.HEX_FILE = "source/modules/firmwareConvert/grbl.hex"  # .hex
         self.PAGE_SIZE = 128                                # Flash page size for ATmega328P (Uno)
         self.connection = None
 
